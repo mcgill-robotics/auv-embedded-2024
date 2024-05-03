@@ -21,24 +21,6 @@ String types[10] = {"battery", "battery", "thruster", "thruster", "thruster", "t
 int myBox[2];
 int myCursor[2];
 
-void setup() {
-  tft.begin();
-  tft.fillScreen(ILI9341_WHITE);
-  tft.setTextColor(ILI9341_BLACK);
-  tft.setTextSize(2);
-
-  tft.setCursor(10, 10);
-  tft.println("Dougie Status");
-
-  Serial.begin(9600);
-}
-
-void loop() {
-  getValuesSerial();
-  displayValues();
-  delay(500);
-}
-
 void getValuesSerial() {
   Serial.println("Enter 10 new values separated by commas:");
 
@@ -177,4 +159,22 @@ void displayValues() {
       updateValueOnScreen(selections[i], types[i], newValues[i]);
     }
   }
+}
+
+void setup() {
+  tft.begin();
+  tft.fillScreen(ILI9341_WHITE);
+  tft.setTextColor(ILI9341_BLACK);
+  tft.setTextSize(2);
+
+  tft.setCursor(10, 10);
+  tft.println("Dougie Status");
+
+  Serial.begin(9600);
+}
+
+void loop() {
+  getValuesSerial();
+  displayValues();
+  delay(500);
 }
