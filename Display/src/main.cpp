@@ -1,6 +1,8 @@
 #include "SPI.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
+#include <Wire.h>
+#include "MS5837.h"
 
 #define TFT_DC 9
 #define TFT_CS 10
@@ -9,6 +11,8 @@
 #define SCREEN_WIDTH 240
 #define RECT_WIDTH 105
 #define RECT_HEIGHT 46
+
+MS5837 sensor;
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
@@ -162,6 +166,20 @@ void displayValues() {
 }
 
 void setup() {
+  Serial.begin(9600);
+
+  Serial.println("Starting");
+  Wire.begin();
+  while (!sensor.init()) {
+    Serial.println("Init failed!");
+    Serial.println("Are SDA/SCL connected correctly?");
+    Serial.println("Blue Robotics Bar30: White=SDA, Green=SCL");
+    Serial.println("\n\n\n");
+    delay(5000);
+  }
+  sensor.setModel(MS5837::MS5837_30BA);
+  sensor.setFluidDensity(997);
+  
   tft.begin();
   tft.fillScreen(ILI9341_WHITE);
   tft.setTextColor(ILI9341_BLACK);
@@ -169,12 +187,29 @@ void setup() {
 
   tft.setCursor(10, 10);
   tft.println("Dougie Status");
-
-  Serial.begin(9600);
 }
 
 void loop() {
+  sensor.read();
+
+  Serial.print("Pressure: ");
+  Serial.print(sensor.pressure());
+  Serial.println(" mbar");
+
+  Serial.print("Temperature: ");
+  Serial.print(sensor.temperature());
+  Serial.println(" deg C");
+
+  Serial.print("Depth: ");
+  Serial.print(sensor.depth());
+  Serial.println(" m");
+
+  Serial.print("Altitude: ");
+  Serial.print(sensor.altitude());
+  Serial.println(" m above mean sea level");
+
   getValuesSerial();
   displayValues();
-  delay(500);
+
+  delay(1000);
 }
