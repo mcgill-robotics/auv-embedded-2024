@@ -1,3 +1,6 @@
+#include <ros.h>
+#include <std_msgs/Float32.h>
+#include <std_msgs/Float64.h>
 #include "SPI.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
@@ -25,39 +28,61 @@ String types[10] = {"battery", "battery", "thruster", "thruster", "thruster", "t
 int myBox[2];
 int myCursor[2];
 
-void getValuesSerial() {
-  Serial.println("Enter 10 new values separated by commas:");
+ros::NodeHandle nh;
 
-  while (!Serial.available()) {
-    // Wait for input
-  }
-
-  // Read input from serial monitor
-  String input = Serial.readStringUntil('\n');
-
-  // Split the input string into individual values
-  int commaIndex = 0;
-  int prevCommaIndex = -1;
-  for (int i = 0; i < 10; i++) {
-    commaIndex = input.indexOf(',', prevCommaIndex + 1);
-    if (commaIndex == -1) {
-      commaIndex = input.length();
-    }
-    String numString = input.substring(prevCommaIndex + 1, commaIndex);
-    newValues[i] = numString.toFloat();
-    prevCommaIndex = commaIndex;
-  }
-
-  // Print the updated array
-  Serial.println("Updated values:");
-  for (int i = 0; i < 10; i++) {
-    Serial.print(newValues[i]);
-    if (i < 9) {
-      Serial.print(", ");
-    }
-  }
-  Serial.println();
+void batt1VoltageCallback(const std_msgs::Float32& msg) {
+    newValues[0] = msg.data;
 }
+
+void batt2VoltageCallback(const std_msgs::Float32& msg) {
+    newValues[1] = msg.data;
+}
+
+void thrust1CurrentCallback(const std_msgs::Float32& msg) {
+    newValues[2] = msg.data;
+}
+
+void thrust2CurrentCallback(const std_msgs::Float32& msg) {
+    newValues[3] = msg.data;
+}
+
+void thrust3CurrentCallback(const std_msgs::Float32& msg) {
+    newValues[4] = msg.data;
+}
+
+void thrust4CurrentCallback(const std_msgs::Float32& msg) {
+    newValues[5] = msg.data;
+}
+
+void thrust5CurrentCallback(const std_msgs::Float32& msg) {
+    newValues[6] = msg.data;
+}
+
+void thrust6CurrentCallback(const std_msgs::Float32& msg) {
+    newValues[7] = msg.data;
+}
+
+void thrust7CurrentCallback(const std_msgs::Float32& msg) {
+    newValues[8] = msg.data;
+}
+
+void thrust8CurrentCallback(const std_msgs::Float32& msg) {
+    newValues[9] = msg.data;
+}
+
+std_msgs::Float64 depthmsg;
+
+ros::Publisher depth("sensors/depth/z", &depthmsg);
+ros::Subscriber<std_msgs::Float32> batt1VoltageSub("batt1_voltage", &batt1VoltageCallback);
+ros::Subscriber<std_msgs::Float32> batt2VoltageSub("batt2_voltage", &batt2VoltageCallback);
+ros::Subscriber<std_msgs::Float32> thrust1CurrentSub("thrust1_current", &thrust1CurrentCallback);
+ros::Subscriber<std_msgs::Float32> thrust2CurrentSub("thrust2_current", &thrust2CurrentCallback);
+ros::Subscriber<std_msgs::Float32> thrust3CurrentSub("thrust3_current", &thrust3CurrentCallback);
+ros::Subscriber<std_msgs::Float32> thrust4CurrentSub("thrust4_current", &thrust4CurrentCallback);
+ros::Subscriber<std_msgs::Float32> thrust5CurrentSub("thrust5_current", &thrust5CurrentCallback);
+ros::Subscriber<std_msgs::Float32> thrust6CurrentSub("thrust6_current", &thrust6CurrentCallback);
+ros::Subscriber<std_msgs::Float32> thrust7CurrentSub("thrust7_current", &thrust7CurrentCallback);
+ros::Subscriber<std_msgs::Float32> thrust8CurrentSub("thrust8_current", &thrust8CurrentCallback);
 
 void areaCalculator(String selection) {
   if (selection == "B1") {
@@ -166,17 +191,12 @@ void displayValues() {
 }
 
 void setup() {
-  Serial.begin(9600);
-
-  Serial.println("Starting");
   Wire.begin();
+
   while (!sensor.init()) {
-    Serial.println("Init failed!");
-    Serial.println("Are SDA/SCL connected correctly?");
-    Serial.println("Blue Robotics Bar30: White=SDA, Green=SCL");
-    Serial.println("\n\n\n");
     delay(5000);
   }
+
   sensor.setModel(MS5837::MS5837_30BA);
   sensor.setFluidDensity(997);
   
@@ -187,29 +207,29 @@ void setup() {
 
   tft.setCursor(10, 10);
   tft.println("Dougie Status");
+
+  nh.initNode();
+  nh.advertise(depth);
+  nh.subscribe(batt1VoltageSub);
+  nh.subscribe(batt2VoltageSub);
+  nh.subscribe(thrust1CurrentSub);
+  nh.subscribe(thrust2CurrentSub);
+  nh.subscribe(thrust3CurrentSub);
+  nh.subscribe(thrust4CurrentSub);
+  nh.subscribe(thrust5CurrentSub);
+  nh.subscribe(thrust6CurrentSub);
+  nh.subscribe(thrust7CurrentSub);
+  nh.subscribe(thrust8CurrentSub);
 }
 
 void loop() {
   sensor.read();
+  depthmsg.data = sensor.depth();
+  depth.publish(&depthmsg);
 
-  Serial.print("Pressure: ");
-  Serial.print(sensor.pressure());
-  Serial.println(" mbar");
-
-  Serial.print("Temperature: ");
-  Serial.print(sensor.temperature());
-  Serial.println(" deg C");
-
-  Serial.print("Depth: ");
-  Serial.print(sensor.depth());
-  Serial.println(" m");
-
-  Serial.print("Altitude: ");
-  Serial.print(sensor.altitude());
-  Serial.println(" m above mean sea level");
-
-  getValuesSerial();
   displayValues();
+
+  nh.spinOnce();
 
   delay(1000);
 }
